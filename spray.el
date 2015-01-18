@@ -178,6 +178,7 @@ decreasing by one for each subsequent word."
 (defvar spray--saved-cursor-type nil)
 (defvar spray--saved-restriction nil)
 (defvar spray--saved-minor-modes nil)
+(defvar spray--buffer nil)
 
 ;; * utility functions
 
@@ -198,6 +199,7 @@ decreasing by one for each subsequent word."
          (setq spray--base-overlay (make-overlay (point-min) (point-max))
                spray--accent-overlay (make-overlay 0 0)
                spray--saved-cursor-type cursor-type
+               spray--buffer (current-buffer)
                spray--saved-restriction (and (buffer-narrowed-p)
                                              (cons (point-min) (point-max))))
          (dolist (mode spray-unsupported-minor-modes)
@@ -261,21 +263,22 @@ decreasing by one for each subsequent word."
     (narrow-to-region beg end)))
 
 (defun spray--update ()
-  (cond ((not (zerop spray--initial-delay))
-         (setq spray--initial-delay (1- spray--initial-delay)))
-        ((not (zerop spray--delay))
-         (setq spray--delay (1- spray--delay))
-         (when (= spray--delay 2)
-           (narrow-to-region (point) (point))))
-        (t
-         (widen)
-         (if (eobp)
-             (spray-mode -1)
-           (when (not (zerop spray--first-words))
-             (setq spray--initial-delay spray--first-words)
-             (setq spray--first-words (1- spray--first-words)))
-           (skip-chars-forward "\s\t\n—")
-           (spray--word-at-point)))))
+  (with-current-buffer spray--buffer
+    (cond ((not (zerop spray--initial-delay))
+           (setq spray--initial-delay (1- spray--initial-delay)))
+          ((not (zerop spray--delay))
+           (setq spray--delay (1- spray--delay))
+           (when (= spray--delay 2)
+             (narrow-to-region (point) (point))))
+          (t
+           (widen)
+           (if (eobp)
+               (spray-mode -1)
+             (when (not (zerop spray--first-words))
+               (setq spray--initial-delay spray--first-words)
+               (setq spray--first-words (1- spray--first-words)))
+             (skip-chars-forward "\s\t\n—")
+             (spray--word-at-point))))))
 
 ;; * interactive commands
 
